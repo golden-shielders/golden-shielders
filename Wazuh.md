@@ -101,9 +101,10 @@ INFO: Installation finished.
 ### UI
 #### 로그인 이후 Wazuh 대시보드 화면 
 
-![[Pasted image 20260409173318.png]]
+![alt text](./images/20260409173318.png)
+
 #### Wazuh 대시보드 네비게이션바 화면
-![[Pasted image 20260409174419.png]]
+![alt text](./images/20260409174419.png)
 
 
 **주요 패널 설명**
@@ -201,35 +202,36 @@ $ WAZUH_MANAGER="WAZUH_SERVER_IP" WAZUH_AGENT_NAME='WAZUH_GUEST_NAME(MUST BE UNI
 
 **Step 1 — [네비게이션바에서 에이전트 관리 메뉴로 이동]**
 
-![[Pasted image 20260410145420.png]]
+![alt text](./images/20260410145420.png)
 
 **Step 2 — [Deploy new agent 버튼 클릭]**
 
-![[Pasted image 20260410145546.png]]
+![alt text](./images/20260410145546.png)
 
 **Step 3 — [에이전트를 설치할 대상 OS환경 선택]**
 
-![[Pasted image 20260410145713.png]]
+![alt text](./images/20260410145713.png)
 
 **Step 4 — [에이전트가 통신할 Wazuh 서버 IP 입력]**
 
-![[Pasted image 20260410145740.png]]
+![alt text](./images/20260410145740.png)
 
 **Step 5 — [에이전트 이름 설정]**
 ※ 에이전트 이름은 중복된 이름이 들어갈 수 없음.
 
-![[Pasted image 20260410145755.png]]
+![alt text](./images/20260410145755.png)
 
 **Step 6 — [자동 완성된 명령어 복사]**
 
-![[Pasted image 20260410145948.png]]
+![alt text](./images/20260410145948.png)
 
 **Step 7 — [설치 대상 서버에서 복사한 명령어 실행]**
 
-![[Pasted image 20260410150251.png]]
+![alt text](./images/20260410150251.png)
+
 ### 에이전트 설치 완료 시 결과 화면
 
-![[Pasted image 20260410145004.png]]
+![alt text](./images/20260410145004.png)
 
 ---
 ## 6. 참고 자료
