@@ -242,7 +242,7 @@ sudo hping3 -S 192.168.0.25 -p 8080 --rand-source --flood
 
 | 증상 | 원인 | 해결 방법 |
 |------|------|-----------|
-| VMware에서 실행 중인 Kali Linux의 마우스 커서가 보이지 않음 | 패키지 업데이트(APT Update) 후 가상 머신 하드웨어 호환성 문제 발생 | 1. 가상 머신 종료<br>2. VM > Manage > Change Hardware Compatibility 클릭<br>3. 하드웨어 호환성 버전(Workstation)을 최신 또는 이전 안정 버전으로 변경 후 재실행 |
+| VMware에서 실행 중인 Kali Linux의 마우스 커서가 보이지 않음 | 패키지 업데이트(APT Update) 후 가상 머신 하드웨어 호환성 문제 발생 | https://www.youtube.com/watch?v=-7QJXI9GCI0 |
 
 ---
 
