@@ -122,7 +122,7 @@ Kali GNU/Linux 나오면 정상 설치
 
 ![칼리 메뉴 스크린샷](images/kali_menu_pannel.png)
 
-**주요 메뉴/패널 설명**
+**주요 메뉴/패널 설명**  
 **1. [Kali Menu]**  
 - 용 문양 아이콘  
 - 모든 보안 도구가 집약된 시작 메뉴
