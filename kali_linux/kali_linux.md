@@ -120,7 +120,7 @@ Kali GNU/Linux 나오면 정상 설치
 ### UI 기준 (해당 시)
 <!-- 주요 화면 구성 설명, 스크린샷 삽입 위치 표시 -->
 
-![칼리 메뉴 스크린샷](images/kali_menu_pannel.png)
+![칼리 메뉴 스크린샷](kali_linux/images/kali_menu_pannel.png)
 
 **주요 메뉴/패널 설명**  
 **1. [Kali Menu]**  
