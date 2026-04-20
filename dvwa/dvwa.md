@@ -205,7 +205,8 @@ http://localhost/DVWA/vulnerabilities/xss_r/
 ```
 결과: `alert` 함수 실행
 
-**Step 3 — 결과 확인**
+**Step 3 — 결과 확인**  
+
 ![image](./image/xss.png)
 
 
