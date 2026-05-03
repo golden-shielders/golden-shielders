@@ -159,7 +159,6 @@ SecRule IP:login_count "@gt 15" \
     "id:9000083,phase:2,log,pass,\
     msg:'Brute Force - Login Threshold Exceeded'"
 ```
-```
 
 Session Management — Session ID in URL
 Snort
