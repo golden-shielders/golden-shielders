@@ -1,0 +1,62 @@
+#-------------------------------------------------------------------------------
+# RUDY (R-U-Dead-Yet / Slow POST) Detection Rules for Snort 2.9
+# Project : Golden Shielders SOC
+# Author  : pyshit3
+# Target  : HTTP servers ($HTTP_SERVERS:$HTTP_PORTS)
+#
+# Attack Description:
+#   RUDY is a slow HTTP DoS variant targeting the HTTP body phase.
+#   - Headers are sent normally (\r\n\r\n terminator present)
+#   - Content-Length specifies a large body size
+#   - Body is transmitted byte-by-byte with long delays
+#   - Server keeps connection alive waiting for full body
+#
+# Difference from Slowloris:
+#   - Slowloris attacks header phase (\r\n\r\n missing) -> TCP raw inspection
+#   - RUDY attacks body phase (headers complete) -> http_inspect buffers usable
+#
+# Detection Strategy:
+#   Snort cannot directly measure body transmission speed (timing).
+#   Therefore detection is based on frequency of suspicious POST patterns:
+#     (1) Multiple POST requests with Content-Length from same source
+#     (2) flowbits ensure each flow contributes once to the count
+#   True timing analysis must be done at SIEM (Wazuh + Nginx request_time).
+#
+# Rules:
+#   sid:1000005 - Simple frequency-based alert (POST + Content-Length)
+#                 Threshold: 10 hits / 10 sec per source IP
+#   sid:1000006 - Stage 1 flag setter with Content-Type form-urlencoded
+#   sid:1000007 - Stage 2 correlation alert (multiple suspect flows)
+#                 Threshold: 10 distinct flows / 10 sec per source IP
+#-------------------------------------------------------------------------------
+
+# Rule 1: Simple frequency-based RUDY detection
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS RUDY - Multiple POST with Content-Length"; \
+flow:to_server,established; \
+content:"POST"; http_method; \
+content:"Content-Length|3a|"; http_header; nocase; \
+detection_filter:track by_src, count 10, seconds 10; \
+classtype:attempted-dos; sid:1000005; rev:1;)
+
+# Rule 2 - Stage 1: Silent flag setter
+# Matches POST requests with Content-Length and form-urlencoded body
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"RUDY suspect flow"; \
+flow:to_server,established; \
+content:"POST"; http_method; \
+content:"Content-Length|3a|"; http_header; nocase; \
+content:"Content-Type|3a|"; http_header; nocase; \
+content:"application/x-www-form-urlencoded"; http_header; nocase; \
+flowbits:isnotset,rudy_suspect; \
+flowbits:set,rudy_suspect; \
+flowbits:noalert; \
+sid:1000006; rev:1;)
+
+# Rule 2 - Stage 2: Correlation alert
+# Triggers when multiple suspect flows originate from same source IP
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"RUDY confirmed - multiple slow POST flows"; \
+flow:to_server,established; \
+flowbits:isset,rudy_suspect; \
+flowbits:isnotset,rudy_counted; \
+flowbits:set,rudy_counted; \
+detection_filter:track by_src, count 10, seconds 10; \
+classtype:attempted-dos; sid:1000007; rev:1;)

@@ -1,0 +1,74 @@
+#-------------------------------------------------------------------------------
+# Apache Killer (CVE-2011-3192) Detection Rules for Snort 2.9
+# Project : Golden Shielders SOC
+# Author  : pyshit3
+# Target  : HTTP servers ($HTTP_SERVERS:$HTTP_PORTS)
+#
+# Vulnerability: CVE-2011-3192
+#   - Affects Apache HTTP Server 1.3.x, 2.0.x through 2.0.64, 2.2.x through 2.2.19
+#   - Patched in Apache 2.2.20 (released August 2011)
+#   - Nginx is NOT affected (returns 400 Bad Request)
+#
+# Attack Description:
+#   The Range request header allows clients to request specific byte ranges
+#   of a resource (used for download resumption, video streaming, etc.).
+#   Apache Killer abuses this by sending many overlapping byte ranges in
+#   a single request:
+#
+#     Range: bytes=0-,5-0,5-1,5-2,5-3,...,5-1300
+#
+#   For each range, Apache allocates memory buffers for response compression.
+#   Hundreds of ranges -> massive memory allocation -> server OOM -> DoS.
+#
+# Detection Strategy:
+#   The signature is highly distinctive and rarely occurs in legitimate traffic:
+#     - Range header with many comma-separated byte ranges (10+)
+#     - Specific pattern "5-0,5-1,5-2..." used by the original killer.pl script
+#     - Abnormally long Range header value (500+ bytes)
+#
+# Rules:
+#   sid:1000012 - Range header with repeated ",5-" pattern
+#   sid:1000013 - PCRE: 10+ byte ranges in Range header
+#   sid:1000014 - Specific Apache Killer script signature (highest confidence)
+#   sid:1000015 - Oversized Range header (>500 bytes after "Range:")
+#-------------------------------------------------------------------------------
+
+# Rule 1: Multiple ",5-" repetitions in Range header (Apache Killer pattern)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Apache Killer (CVE-2011-3192) - Range Header Abuse"; \
+flow:to_server,established; \
+content:"Range|3a|"; http_header; nocase; \
+content:"bytes="; http_header; nocase; distance:0; \
+content:",5-"; http_header; \
+content:",5-"; http_header; distance:0; \
+content:",5-"; http_header; distance:0; \
+content:",5-"; http_header; distance:0; \
+content:",5-"; http_header; distance:0; \
+reference:cve,2011-3192; \
+classtype:attempted-dos; sid:1000012; rev:1;)
+
+# Rule 2: PCRE - 10+ byte ranges in Range header
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Apache Killer - Excessive Byte Ranges in Range Header"; \
+flow:to_server,established; \
+content:"Range|3a|"; http_header; nocase; \
+content:"bytes="; http_header; nocase; distance:0; \
+pcre:"/Range\x3a\s*bytes=([0-9]*-[0-9]*,){10,}/Hi"; \
+reference:cve,2011-3192; \
+classtype:attempted-dos; sid:1000013; rev:1;)
+
+# Rule 3: Specific Apache Killer script signature (highest confidence)
+# Matches the exact pattern used by killer.pl PoC
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Apache Killer - Killer Script Signature"; \
+flow:to_server,established; \
+content:"Range|3a|"; http_header; nocase; \
+content:"bytes=0-,5-0,5-1,5-2"; http_header; nocase; \
+reference:cve,2011-3192; \
+reference:url,seclists.org/fulldisclosure/2011/Aug/175; \
+classtype:attempted-dos; sid:1000014; rev:1;)
+
+# Rule 4: Oversized Range header (auxiliary signature)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Apache Killer - Oversized Range Header"; \
+flow:to_server,established; \
+content:"Range|3a|"; http_header; nocase; \
+isdataat:500,relative; \
+reference:cve,2011-3192; \
+classtype:attempted-dos; sid:1000015; rev:1;)
