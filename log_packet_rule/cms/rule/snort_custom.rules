@@ -1,0 +1,10 @@
+# SNMP 
+# public 커뮤니티 이름 사용 탐지
+alert udp $EXTERNAL_NET any -> $HOME_NET 161 (msg:"SNMP Brute Force Attempt - Community public"; content:"public"; nocase; metadata:service snmp; sid:; rev:1;)
+
+# private 커뮤니티 이름 사용 탐지
+alert udp $EXTERNAL_NET any -> $HOME_NET 161 (msg:"SNMP Brute Force Attempt - Community private"; content:"private"; nocase; metadata:service snmp; sid:; rev:1;)
+
+# TCP Session Hijacking 
+# 공격 시도 탐지 (High Sensitivity)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any (msg:"TCP Session Hijacking Attempt - High Sensitivity"; flags:A; ack:0; window:0; classtype:attempted-admin; sid:; rev:1;)
