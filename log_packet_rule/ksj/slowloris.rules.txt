@@ -1,0 +1,42 @@
+#-------------------------------------------------------------------------------
+# Slowloris Detection Rules for Snort 2.9
+# Project : Golden Shielders SOC
+# Author  : pyshit3
+# Target  : HTTP servers ($HTTP_SERVERS:$HTTP_PORTS)
+#
+# Detection Logic:
+#   Slowloris has two essential signatures:
+#     (1) Multiple connections from same source IP
+#     (2) Each connection sends headers slowly without \r\n\r\n terminator
+#
+#   Stage 1 (sid:1000003) - Silent flag setter
+#     - Detects incomplete HTTP header pattern in a flow
+#     - Sets flowbit "slowloris_suspect" only on first match per flow
+#     - Does not alert (noalert)
+#
+#   Stage 2 (sid:1000004) - Correlation alert
+#     - Counts only suspect flows that haven't been counted yet
+#     - Each flow contributes exactly 1 count via "slowloris_counted" guard
+#     - Triggers when 20+ distinct suspect flows from same src IP in 30 sec
+#
+#   This combination ensures BOTH essentials are required for alert.
+#-------------------------------------------------------------------------------
+
+# Stage 1: Silent flag setter (per-flow incomplete header pattern)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Slowloris suspect flow"; \
+flow:to_server,established; \
+content:"|0d 0a|"; \
+content:!"|0d 0a 0d 0a|"; \
+flowbits:isnotset,slowloris_suspect; \
+flowbits:set,slowloris_suspect; \
+flowbits:noalert; \
+sid:1000003; rev:2;)
+
+# Stage 2: Correlation alert (multiple suspect flows from same source)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Slowloris confirmed - multiple suspect flows"; \
+flow:to_server,established; \
+flowbits:isset,slowloris_suspect; \
+flowbits:isnotset,slowloris_counted; \
+flowbits:set,slowloris_counted; \
+detection_filter:track by_src, count 20, seconds 30; \
+classtype:attempted-dos; sid:1000004; rev:2;)

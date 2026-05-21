@@ -1,0 +1,69 @@
+#-------------------------------------------------------------------------------
+# Slow Read Attack Detection Rules for Snort 2.9
+# Project : Golden Shielders SOC
+# Author  : pyshit3
+# Target  : HTTP servers ($HTTP_SERVERS:$HTTP_PORTS)
+#
+# Attack Description:
+#   Slow Read is a slow HTTP DoS variant targeting the response phase.
+#   - Client sends a normal HTTP request that triggers a large response
+#   - Client advertises an extremely small TCP receive window (or zero)
+#   - Server is forced to send response slowly (or pause entirely)
+#   - Server worker remains occupied waiting to flush the response
+#
+# Difference from Slowloris/RUDY:
+#   - Slowloris attacks header phase    (request headers, never sends \r\n\r\n)
+#   - RUDY     attacks body phase       (request body sent byte-by-byte)
+#   - Slow Read attacks response phase  (response received byte-by-byte)
+#
+# Detection Strategy:
+#   The signature of Slow Read is an abnormally small TCP window size
+#   advertised by the client in ACK packets toward the server.
+#     - Normal clients advertise windows of 8KB - 64KB or larger
+#     - Attackers advertise 0 - 100 bytes to force slow transmission
+#   We detect via the 'window:' rule option which inspects TCP window field.
+#
+# Rules:
+#   sid:1000008 - TCP Zero Window from client (strict, low FP)
+#                 Threshold: 10 hits / 30 sec per source IP
+#   sid:1000009 - Tiny TCP Window (1-64 bytes) from client
+#                 Threshold: 20 hits / 60 sec per source IP
+#   sid:1000010 - Stage 1 flag setter for suspect flows (window 0-100)
+#   sid:1000011 - Stage 2 correlation alert (multiple slow read flows)
+#                 Threshold: 10 distinct flows / 30 sec per source IP
+#-------------------------------------------------------------------------------
+
+# Rule 1: TCP Zero Window from client (strict signature)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Slow Read - TCP Zero Window from client"; \
+flow:to_server,established; \
+flags:A; \
+window:0; \
+detection_filter:track by_src, count 10, seconds 30; \
+classtype:attempted-dos; sid:1000008; rev:1;)
+
+# Rule 2: Tiny TCP Window (1-64 bytes)
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"DoS Slow Read - Tiny TCP Window"; \
+flow:to_server,established; \
+flags:A; \
+window:1<>64; \
+detection_filter:track by_src, count 20, seconds 60; \
+classtype:attempted-dos; sid:1000009; rev:1;)
+
+# Rule 3 - Stage 1: Silent flag setter for suspect flows
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Slow Read suspect flow"; \
+flow:to_server,established; \
+flags:A; \
+window:0<>100; \
+flowbits:isnotset,slowread_suspect; \
+flowbits:set,slowread_suspect; \
+flowbits:noalert; \
+sid:1000010; rev:1;)
+
+# Rule 3 - Stage 2: Correlation alert
+alert tcp any any -> $HTTP_SERVERS $HTTP_PORTS (msg:"Slow Read confirmed - multiple slow read flows"; \
+flow:to_server,established; \
+flowbits:isset,slowread_suspect; \
+flowbits:isnotset,slowread_counted; \
+flowbits:set,slowread_counted; \
+detection_filter:track by_src, count 10, seconds 30; \
+classtype:attempted-dos; sid:1000011; rev:1;)
